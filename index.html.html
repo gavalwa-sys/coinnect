@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Trading Bot v3</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .container {
+            max-width: 600px;
+            padding: 20px;
+            background: #34495e;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            margin-right: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 16px;
+            background: #ecf0f1;
+            color: #34495e;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        #log {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #bdc3c7;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            color: #34495e;
+        }
+        #livePrices {
+            background: #16a085;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .settings {
+            margin-top: 20px;
+            display: none;
+        }
+        .currency-label {
+            font-weight: bold;
+            color: #e74c3c;
+            text-align: center;
+        }
+        .calculator {
+            max-width: 300px;
+            padding: 20px;
+            background: #34495e;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            margin-top: 20px;
+        }
+        .robot-image {
+            margin-left: 20px;
+            width: 300px; /* Adjust size as needed */
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Trading Bot v3</h1>
+        
+        <div id="livePrices">
+            <h2>Live Forex Prices</h2>
+            <div id="forexData">Loading...</div>
+        </div>
+
+        <label for="apiToken">API Token:</label>
+        <input type="text" id="apiToken" value="kNevOluP7ceLF5r" readonly>
+        
+        <label for="currency" class="currency-label">Select Currency:</label>
+        <select id="currency">
+            <option value="frxEURUSD">EUR/USD</option>
+            <option value="frxGBPUSD">GBP/USD</option>
+            <option value="frxUSDJPY">USD/JPY</option>
+            <option value="frxAUDUSD">AUD/USD</option>
+            <option value="frxUSDCHF">USD/CHF</option>
+            <option value="frxNZDUSD">NZD/USD</option>
+            <option value="frxAUDJPY">AUD/JPY</option>
+            <option value="frxCADJPY">CAD/JPY</option>
+            <option value="frxGBPJPY">GBP/JPY</option>
+            <option value="frxEURGBP">EUR/GBP</option>
+            <option value="frxAUDCAD">AUD/CAD</option>
+            <option value="frxAUDNZD">AUD/NZD</option>
+        </select>
+
+        <label for="stake">Enter Stake Amount:</label>
+        <input type="number" id="stake" placeholder="Stake Amount" min="1" step="0.01">
+        
+        <button id="startButton">Start Trading</button>
+        <button id="settingsButton">Settings</button>
+
+        <div class="settings" id="settings">
+            <label for="profitThreshold">Profit Threshold (%):</label>
+            <input type="number" id="profitThreshold" value="10" step="1">
+            
+            <label for="lossThreshold">Loss Threshold (%):</label>
+            <input type="number" id="lossThreshold" value="2" step="1">
+        </div>
+
+        <div id="log"></div>
+    </div>
+
+    <div class="calculator">
+        <h2>Forex Calculator</h2>
+        <label for="amount">Amount:</label>
+        <input type="number" id="amount" placeholder="Amount to Convert" min="1">
+        
+        <label for="convertFrom">Convert From:</label>
+        <select id="convertFrom">
+            <option value="frxEURUSD">EUR</option>
+            <option value="frxGBPUSD">GBP</option>
+            <option value="frxUSDJPY">USD</option>
+            <option value="frxAUDUSD">AUD</option>
+            <option value="frxUSDCHF">CHF</option>
+            <option value="frxNZDUSD">NZD</option>
+        </select>
+
+        <label for="convertTo">Convert To:</label>
+        <select id="convertTo">
+            <option value="frxEURUSD">USD</option>
+            <option value="frxGBPUSD">USD</option>
+            <option value="frxUSDJPY">JPY</option>
+            <option value="frxAUDUSD">USD</option>
+            <option value="frxUSDCHF">CHF</option>
+            <option value="frxNZDUSD">USD</option>
+        </select>
+        
+        <button id="convertButton">Convert</button>
+        <div id="conversionResult" style="margin-top: 10px; color: #ecf0f1;"></div>
+    </div>
+
+    <img src="c:\Users\hp\Desktop\image-00001.jpeg" alt="Robot Image" class="robot-image">
+
+    <script>
+        const logElement = document.getElementById('log');
+        const forexDataElement = document.getElementById('forexData');
+        const apiToken = 'kNevOluP7ceLF5r'; // API Token for Deriv
+
+        function log(message) {
+            logElement.innerHTML += message + '<br>';
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        async function fetchLiveForexData() {
+            const symbols = ["frxEURUSD", "frxGBPUSD", "frxUSDJPY", "frxAUDUSD", "frxUSDCHF", "frxNZDUSD", "frxAUDJPY", "frxCADJPY", "frxGBPJPY", "frxEURGBP", "frxAUDCAD", "frxAUDNZD"];
+            const promises = symbols.map(async (symbol) => {
+                const url = https://api.binary.com/v3/price/${symbol}?api_token=${apiToken};
+                const response = await fetch(url);
+                const data = await response.json();
+                return { symbol, bid: data.bid, ask: data.ask };
+            });
+            return await Promise.all(promises);
+        }
+
+        function updateForexData(prices) {
+            forexDataElement.innerHTML = prices.map(price => 
+                ${price.symbol}: Bid: ${price.bid}, Ask: ${price.ask}
+            ).join('<br>');
+        }
+
+        async function convertCurrency(amount, from, to) {
+            const urlFrom = https://api.binary.com/v3/price/${from}?api_token=${apiToken};
+            const urlTo = https://api.binary.com/v3/price/${to}?api_token=${apiToken};
+            const [fromData, toData] = await Promise.all([fetch(urlFrom).then(res => res.json()), fetch(urlTo).then(res => res.json())]);
+
+            const convertedAmount = amount * (toData.ask / fromData.bid);
+            return convertedAmount.toFixed(2);
+        }
+
+        document.getElementById('convertButton').addEventListener('click', async () => {
+            const amount = parseFloat(document.getElementById('amount').value);
+            const convertFrom = document.getElementById('convertFrom').value;
+            const convertTo = document.getElementById('convertTo').value;
+
+            if (amount > 0) {
+                const result = await convertCurrency(amount, convertFrom, convertTo);
+                document.getElementById('conversionResult').innerText = Converted Amount: ${result} ${convertTo};
+            } else {
+                document.getElementById('conversionResult').innerText = 'Please enter a valid amount.';
+            }
+        });
+
+        document.getElementById('startButton').addEventListener('click', async () => {
+            const selectedCurrency = document.getElementById('currency').value;
+            const stakeAmount = parseFloat(document.getElementById('stake').value) || 10;
+
+            const profitThreshold = parseFloat(document.getElementById('profitThreshold').value) || 10;
+            const lossThreshold = parseFloat(document.getElementById('lossThreshold').value) || 2;
+
+            const tradingBot = new TradingBot(1000, profitThreshold, lossThreshold);
+            const derivBot = new DerivBot(apiToken);
+
+            setInterval(async () => {
+                const liveData = await fetchLiveForexData();
+                updateForexData(liveData);
+
+                const latestPrice = liveData.find(data => data.symbol === selectedCurrency);
+                if (latestPrice) {
+                    const price = (latestPrice.bid + latestPrice.ask) / 2; // Average price
+                    tradingBot.update(price, stakeAmount);
+                    if (tradingBot.position === null) {
+                        tradingBot.buy(price, stakeAmount);
+                        derivBot.buy(selectedCurrency, stakeAmount);
+                    }
+                }
+            }, 5000);
+        });
+
+        document.getElementById('settingsButton').addEventListener('click', () => {
+            const settings = document.getElementById('settings');
+            settings.style.display = settings.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Initial fetch of forex data
+        fetchLiveForexData().then(updateForexData);
+    </script>
+</body>
+</html>
